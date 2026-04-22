@@ -1,0 +1,1845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskFlow - Inbox</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Same CSS as dashboard but with inbox-specific additions */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --primary-dark: #4f46e5;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            
+            --bg-primary: #f9fafb;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f3f4f6;
+            --text-primary: #111827;
+            --text-secondary: #6b7280;
+            --text-tertiary: #9ca3af;
+            --border-color: #e5e7eb;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+            --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-tertiary: #64748b;
+            --border-color: #334155;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            transition: background 0.3s ease, color 0.3s ease;
+            line-height: 1.6;
+        }
+
+        .app-container {
+            display: flex;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        .mobile-menu-toggle {
+            display: none;
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: var(--primary);
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-md);
+        }
+
+        .sidebar {
+            width: 280px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+            padding: 24px 16px;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            transition: transform 0.3s ease;
+            z-index: 999;
+        }
+
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 998;
+        }
+
+        .sidebar-overlay.active {
+            display: block;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0 12px 24px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 24px;
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .logo-text {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-menu {
+            list-style: none;
+            margin-bottom: 32px;
+        }
+
+        .nav-item {
+            margin-bottom: 4px;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-radius: 12px;
+            transition: all 0.2s ease;
+            font-weight: 500;
+            position: relative;
+        }
+
+        .nav-link i {
+            width: 20px;
+            font-size: 18px;
+        }
+
+        .nav-link:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .nav-link.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .inbox-count {
+            margin-left: auto;
+            background: var(--primary);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .nav-link.active .inbox-count {
+            background: white;
+            color: var(--primary);
+        }
+
+        .nav-section-title {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-tertiary);
+            padding: 16px 16px 8px;
+        }
+
+        .main-content {
+            flex: 1;
+            margin-left: 280px;
+            padding: 32px 40px;
+            transition: margin-left 0.3s ease;
+            width: calc(100% - 280px);
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 32px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .page-title {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .inbox-description {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-top: 4px;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .name-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 40px;
+        }
+
+        .name-input-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .name-input {
+            border: none;
+            background: transparent;
+            color: var(--text-primary);
+            font-size: 14px;
+            font-weight: 500;
+            padding: 8px 0;
+            width: 150px;
+            outline: none;
+            border-bottom: 1px dashed var(--border-color);
+        }
+
+        .name-input:focus {
+            border-bottom-color: var(--primary);
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--info));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .theme-toggle {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            font-size: 18px;
+        }
+
+        .theme-toggle:hover {
+            background: var(--bg-tertiary);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .inbox-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .quick-add-inbox {
+            flex: 1;
+            max-width: 600px;
+            position: relative;
+        }
+
+        .quick-add-input {
+            width: 100%;
+            padding: 14px 20px 14px 48px;
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-color);
+            border-radius: 14px;
+            font-size: 15px;
+            color: var(--text-primary);
+            transition: all 0.2s ease;
+        }
+
+        .quick-add-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .quick-add-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--primary);
+            font-size: 18px;
+        }
+
+        .quick-add-hint {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-tertiary);
+            font-size: 13px;
+        }
+
+        .toolbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .filter-btn, .sort-btn {
+            padding: 10px 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-primary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .filter-btn:hover, .sort-btn:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .bulk-actions {
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 20px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .bulk-actions.active {
+            display: flex;
+        }
+
+        .selected-count {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .bulk-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .bulk-btn {
+            padding: 8px 16px;
+            background: var(--bg-tertiary);
+            border: none;
+            border-radius: 8px;
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .bulk-btn:hover {
+            background: var(--border-color);
+        }
+
+        .bulk-btn.danger:hover {
+            background: var(--danger);
+            color: white;
+        }
+
+        .inbox-list {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        .inbox-header {
+            display: grid;
+            grid-template-columns: 40px 1fr 200px 100px 80px;
+            padding: 16px 20px;
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border-color);
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .inbox-item {
+            display: grid;
+            grid-template-columns: 40px 1fr 200px 100px 80px;
+            padding: 16px 20px;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            transition: all 0.2s ease;
+            cursor: pointer;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .inbox-item:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .inbox-item:last-child {
+            border-bottom: none;
+        }
+
+        .inbox-item.selected {
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .checkbox-col {
+            display: flex;
+            align-items: center;
+        }
+
+        .task-checkbox {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: var(--primary);
+        }
+
+        .task-title-col {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .task-title {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .task-title.completed {
+            text-decoration: line-through;
+            color: var(--text-secondary);
+            opacity: 0.6;
+        }
+
+        .task-priority-badge {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .priority-high { background: var(--danger); }
+        .priority-medium { background: var(--warning); }
+        .priority-low { background: var(--success); }
+
+        .project-col {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .project-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .project-name {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .date-col {
+            color: var(--text-secondary);
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .actions-col {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .inbox-item:hover .actions-col {
+            opacity: 1;
+        }
+
+        .action-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .action-btn:hover {
+            background: var(--bg-primary);
+            color: var(--primary);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state i {
+            font-size: 64px;
+            color: var(--text-tertiary);
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            font-size: 20px;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        .empty-state p {
+            margin-bottom: 24px;
+            font-size: 15px;
+        }
+
+        .inbox-tips {
+            margin-top: 32px;
+            padding: 24px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+        }
+
+        .tips-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tips-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .tip-card {
+            padding: 16px;
+            background: var(--bg-tertiary);
+            border-radius: 12px;
+        }
+
+        .tip-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+
+        .tip-card h4 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: var(--text-primary);
+        }
+
+        .tip-card p {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .add-task-fab {
+            position: fixed;
+            bottom: 32px;
+            right: 32px;
+            width: 56px;
+            height: 56px;
+            border-radius: 28px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-lg);
+            transition: all 0.2s ease;
+            z-index: 100;
+        }
+
+        .add-task-fab:hover {
+            transform: scale(1.1);
+            box-shadow: var(--shadow-xl);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .sidebar {
+                width: 80px;
+            }
+
+            .logo-text,
+            .nav-link span,
+            .nav-section-title,
+            .inbox-count {
+                display: none;
+            }
+
+            .nav-link {
+                justify-content: center;
+                padding: 12px;
+            }
+
+            .nav-link i {
+                margin: 0;
+                font-size: 20px;
+            }
+
+            .main-content {
+                margin-left: 80px;
+                width: calc(100% - 80px);
+            }
+
+            .inbox-header {
+                grid-template-columns: 40px 1fr 150px 100px 80px;
+            }
+
+            .inbox-item {
+                grid-template-columns: 40px 1fr 150px 100px 80px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .mobile-menu-toggle {
+                display: flex;
+            }
+
+            .sidebar {
+                transform: translateX(-100%);
+                width: 280px;
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            .logo-text,
+            .nav-link span,
+            .nav-section-title,
+            .inbox-count {
+                display: block;
+            }
+
+            .nav-link {
+                justify-content: flex-start;
+            }
+
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+                padding: 20px;
+                padding-top: 80px;
+            }
+
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .header-actions {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .page-title {
+                font-size: 24px;
+            }
+
+            .inbox-toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .quick-add-inbox {
+                max-width: 100%;
+            }
+
+            .toolbar-actions {
+                justify-content: space-between;
+            }
+
+            .inbox-header {
+                display: none;
+            }
+
+            .inbox-item {
+                grid-template-columns: 40px 1fr auto;
+                gap: 12px;
+                position: relative;
+            }
+
+            .project-col, .date-col {
+                grid-column: 2;
+                margin-top: 4px;
+            }
+
+            .actions-col {
+                position: absolute;
+                right: 20px;
+                top: 50%;
+                transform: translateY(-50%);
+                opacity: 1;
+            }
+
+            .add-task-fab {
+                bottom: 20px;
+                right: 20px;
+                width: 48px;
+                height: 48px;
+                font-size: 20px;
+            }
+
+            .quick-add-hint {
+                display: none;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .main-content {
+                padding: 16px;
+                padding-top: 70px;
+            }
+
+            .filter-btn span, .sort-btn span {
+                display: none;
+            }
+
+            .filter-btn, .sort-btn {
+                padding: 10px;
+            }
+
+            .tips-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--text-tertiary);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+    <button class="mobile-menu-toggle" id="mobileMenuToggle" onclick="toggleMobileMenu()">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeMobileMenu()"></div>
+
+    <div class="app-container">
+        <aside class="sidebar" id="sidebar">
+            <div class="logo">
+                <div class="logo-icon">T</div>
+                <span class="logo-text">TaskFlow</span>
+            </div>
+
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="index.html" class="nav-link">
+                        <i class="fas fa-home"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="inbox.html" class="nav-link active">
+                        <i class="fas fa-inbox"></i>
+                        <span>Inbox</span>
+                        <span class="inbox-count" id="inboxCount">0</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="tasks.html" class="nav-link">
+                        <i class="fas fa-tasks"></i>
+                        <span>My Tasks</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="calendar.html" class="nav-link">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span>Calendar</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="analytics.html" class="nav-link">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Analytics</span>
+                    </a>
+                </li>
+            </ul>
+
+            <div class="nav-section-title">Projects</div>
+            <ul class="nav-menu" id="projectsList">
+                <li class="nav-item">
+                    <a href="#" class="nav-link" onclick="openAddProjectModal()">
+                        <i class="fas fa-plus"></i>
+                        <span>Add Project</span>
+                    </a>
+                </li>
+            </ul>
+
+            <div class="nav-section-title">Tags</div>
+            <ul class="nav-menu" id="tagsList">
+                <li class="nav-item">
+                    <a href="#" class="nav-link" onclick="openAddTagModal()">
+                        <i class="fas fa-plus"></i>
+                        <span>Add Tag</span>
+                    </a>
+                </li>
+            </ul>
+        </aside>
+
+        <main class="main-content">
+            <header class="header">
+                <div class="header-left">
+                    <div>
+                        <h1 class="page-title">Inbox</h1>
+                        <p class="inbox-description">Capture tasks quickly. Process and organize them later.</p>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <div class="name-section">
+                        <div class="user-avatar" id="userAvatar">?</div>
+                        <div class="name-input-wrapper">
+                            <input type="text" 
+                                   class="name-input" 
+                                   id="userNameInput" 
+                                   placeholder="Your name" 
+                                   maxlength="30"
+                                   onblur="saveUserName()"
+                                   onkeypress="if(event.key==='Enter'){saveUserName()}">
+                            <i class="fas fa-pencil-alt" style="color: var(--text-tertiary); font-size: 12px;"></i>
+                        </div>
+                    </div>
+                    
+                    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                </div>
+            </header>
+
+            <div class="inbox-toolbar">
+                <div class="quick-add-inbox">
+                    <i class="fas fa-plus-circle quick-add-icon"></i>
+                    <input type="text" 
+                           class="quick-add-input" 
+                           id="quickInboxInput" 
+                           placeholder="Add a task to your inbox... (Press Enter)"
+                           onkeypress="if(event.key==='Enter'){addInboxTask()}">
+                    <span class="quick-add-hint">Press Enter ↵</span>
+                </div>
+                <div class="toolbar-actions">
+                    <button class="filter-btn" onclick="toggleFilter()">
+                        <i class="fas fa-filter"></i>
+                        <span>Filter</span>
+                    </button>
+                    <button class="sort-btn" onclick="toggleSort()">
+                        <i class="fas fa-arrow-up-wide-short"></i>
+                        <span>Sort</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="bulk-actions" id="bulkActions">
+                <span class="selected-count" id="selectedCount">0 tasks selected</span>
+                <div class="bulk-buttons">
+                    <button class="bulk-btn" onclick="bulkMoveToProject()">
+                        <i class="fas fa-folder"></i>
+                        Move to Project
+                    </button>
+                    <button class="bulk-btn" onclick="bulkAddTag()">
+                        <i class="fas fa-tag"></i>
+                        Add Tag
+                    </button>
+                    <button class="bulk-btn danger" onclick="bulkDelete()">
+                        <i class="fas fa-trash-alt"></i>
+                        Delete
+                    </button>
+                    <button class="bulk-btn" onclick="clearSelection()">
+                        <i class="fas fa-times"></i>
+                        Cancel
+                    </button>
+                </div>
+            </div>
+
+            <div class="inbox-list" id="inboxList">
+                <div class="inbox-header">
+                    <div class="checkbox-col">
+                        <input type="checkbox" class="task-checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()">
+                    </div>
+                    <div>Task</div>
+                    <div>Project</div>
+                    <div>Added</div>
+                    <div>Actions</div>
+                </div>
+                
+                <div id="inboxItems">
+                    <!-- Tasks will be rendered here -->
+                </div>
+            </div>
+
+            <div class="inbox-tips">
+                <div class="tips-title">
+                    <i class="fas fa-lightbulb" style="color: var(--warning);"></i>
+                    Tips for using Inbox
+                </div>
+                <div class="tips-grid">
+                    <div class="tip-card">
+                        <div class="tip-icon">
+                            <i class="fas fa-bolt"></i>
+                        </div>
+                        <h4>Quick Capture</h4>
+                        <p>Use the quick add bar to capture tasks as they come to mind. Don't worry about organizing them yet.</p>
+                    </div>
+                    <div class="tip-card">
+                        <div class="tip-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <h4>Process Daily</h4>
+                        <p>Review your inbox daily. Move tasks to appropriate projects or schedule them for later.</p>
+                    </div>
+                    <div class="tip-card">
+                        <div class="tip-icon">
+                            <i class="fas fa-magic"></i>
+                        </div>
+                        <h4>Natural Language</h4>
+                        <p>Try typing "Call John tomorrow 2pm #Work" to automatically set due date and project.</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <button class="add-task-fab" onclick="focusQuickAdd()">
+            <i class="fas fa-plus"></i>
+        </button>
+    </div>
+
+    <script>
+        let appState = {
+            tasks: [],
+            inboxTasks: [],
+            projects: [],
+            tags: [],
+            activities: [],
+            userName: '',
+            selectedTasks: new Set()
+        };
+
+        function initApp() {
+            loadData();
+            loadUserName();
+            updateAvatar();
+            renderInboxItems();
+            updateInboxCount();
+            renderProjectsList();
+            renderTagsList();
+        }
+
+        function loadData() {
+            const saved = localStorage.getItem('taskflow_data');
+            if (saved) {
+                const data = JSON.parse(saved);
+                appState.tasks = data.tasks || [];
+                appState.inboxTasks = data.inboxTasks || [];
+                appState.projects = data.projects || [];
+                appState.tags = data.tags || [];
+                appState.activities = data.activities || [];
+            }
+            
+            if (appState.inboxTasks.length === 0 && appState.tasks.length === 0) {
+                addSampleData();
+            }
+            
+            syncData();
+        }
+
+        function addSampleData() {
+            appState.inboxTasks = [
+                {
+                    id: Date.now() - 1000,
+                    title: "Research new productivity tools",
+                    completed: false,
+                    project: null,
+                    addedDate: new Date().toISOString(),
+                    dueDate: null,
+                    priority: "medium",
+                    inInbox: true
+                },
+                {
+                    id: Date.now() - 2000,
+                    title: "Schedule dentist appointment",
+                    completed: false,
+                    project: "Personal",
+                    addedDate: new Date(Date.now() - 86400000).toISOString(),
+                    dueDate: null,
+                    priority: "low",
+                    inInbox: true
+                },
+                {
+                    id: Date.now() - 3000,
+                    title: "Prepare quarterly presentation",
+                    completed: false,
+                    project: "Work",
+                    addedDate: new Date(Date.now() - 172800000).toISOString(),
+                    dueDate: null,
+                    priority: "high",
+                    inInbox: true
+                }
+            ];
+            
+            appState.projects = [
+                { id: 1, name: "Work", color: "blue" },
+                { id: 2, name: "Personal", color: "green" },
+                { id: 3, name: "Learning", color: "purple" }
+            ];
+            
+            appState.tasks = [...appState.inboxTasks];
+            
+            saveData();
+        }
+
+        function syncData() {
+            appState.inboxTasks.forEach(inboxTask => {
+                const existsInMain = appState.tasks.some(t => t.id === inboxTask.id);
+                if (!existsInMain) {
+                    appState.tasks.push({...inboxTask});
+                }
+            });
+            
+            appState.inboxTasks.forEach(task => {
+                task.inInbox = true;
+            });
+        }
+
+        function loadUserName() {
+            const savedName = localStorage.getItem('taskflow_username');
+            if (savedName) {
+                appState.userName = savedName;
+                document.getElementById('userNameInput').value = savedName;
+            }
+        }
+
+        function saveUserName() {
+            const input = document.getElementById('userNameInput');
+            const name = input.value.trim();
+            
+            if (name) {
+                appState.userName = name;
+                localStorage.setItem('taskflow_username', name);
+                showNotification(`Welcome, ${name}!`);
+            } else {
+                appState.userName = '';
+                localStorage.removeItem('taskflow_username');
+            }
+            
+            updateAvatar();
+        }
+
+        function updateAvatar() {
+            const avatar = document.getElementById('userAvatar');
+            if (appState.userName) {
+                const initials = appState.userName
+                    .split(' ')
+                    .map(word => word[0])
+                    .join('')
+                    .toUpperCase()
+                    .slice(0, 2);
+                avatar.textContent = initials;
+            } else {
+                avatar.textContent = '?';
+            }
+        }
+
+        function saveData() {
+            appState.inboxTasks.forEach(inboxTask => {
+                const mainTaskIndex = appState.tasks.findIndex(t => t.id === inboxTask.id);
+                if (mainTaskIndex !== -1) {
+                    appState.tasks[mainTaskIndex] = {...inboxTask};
+                } else {
+                    appState.tasks.push({...inboxTask});
+                }
+            });
+            
+            localStorage.setItem('taskflow_data', JSON.stringify({
+                tasks: appState.tasks,
+                inboxTasks: appState.inboxTasks,
+                projects: appState.projects,
+                tags: appState.tags,
+                activities: appState.activities
+            }));
+        }
+
+        function addInboxTask() {
+            const input = document.getElementById('quickInboxInput');
+            const title = input.value.trim();
+            
+            if (title) {
+                const newTask = {
+                    id: Date.now(),
+                    title: title,
+                    completed: false,
+                    project: null,
+                    addedDate: new Date().toISOString(),
+                    dueDate: null,
+                    priority: 'medium',
+                    inInbox: true
+                };
+                
+                appState.inboxTasks.unshift(newTask);
+                
+                if (!appState.activities) appState.activities = [];
+                appState.activities.unshift({
+                    id: Date.now(),
+                    text: `You added "${title}" to inbox`,
+                    icon: 'inbox',
+                    time: 'Just now'
+                });
+                
+                saveData();
+                renderInboxItems();
+                updateInboxCount();
+                
+                input.value = '';
+                showNotification('Task added to inbox');
+            }
+        }
+
+        function renderInboxItems() {
+            const container = document.getElementById('inboxItems');
+            
+            if (!appState.inboxTasks || appState.inboxTasks.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <h3>Your inbox is empty</h3>
+                        <p>Capture tasks quickly using the input above.<br>They'll stay here until you're ready to organize them.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            const itemsHtml = appState.inboxTasks.map(task => {
+                const addedDate = task.addedDate ? new Date(task.addedDate) : new Date();
+                const dateStr = formatDate(addedDate);
+                const isSelected = appState.selectedTasks.has(task.id);
+                
+                return `
+                    <div class="inbox-item ${isSelected ? 'selected' : ''}" onclick="toggleTaskSelection(${task.id}, event)">
+                        <div class="checkbox-col" onclick="event.stopPropagation()">
+                            <input type="checkbox" 
+                                   class="task-checkbox" 
+                                   ${isSelected ? 'checked' : ''} 
+                                   onchange="toggleTaskSelection(${task.id}, event)">
+                        </div>
+                        <div class="task-title-col">
+                            <span class="task-priority-badge priority-${task.priority || 'medium'}"></span>
+                            <span class="task-title ${task.completed ? 'completed' : ''}">${escapeHtml(task.title)}</span>
+                        </div>
+                        <div class="project-col">
+                            ${task.project ? `
+                                <span class="project-dot" style="background: #3b82f6;"></span>
+                                <span class="project-name">${escapeHtml(task.project)}</span>
+                            ` : `
+                                <span class="project-name" style="color: var(--text-tertiary);">No project</span>
+                            `}
+                        </div>
+                        <div class="date-col">
+                            <i class="far fa-calendar-alt"></i>
+                            ${dateStr}
+                        </div>
+                        <div class="actions-col">
+                            <button class="action-btn" onclick="event.stopPropagation(); toggleComplete(${task.id})" title="${task.completed ? 'Mark incomplete' : 'Complete'}">
+                                <i class="far fa-${task.completed ? 'circle' : 'check-circle'}"></i>
+                            </button>
+                            <button class="action-btn" onclick="event.stopPropagation(); moveToProject(${task.id})" title="Move to Project">
+                                <i class="far fa-folder"></i>
+                            </button>
+                            <button class="action-btn" onclick="event.stopPropagation(); deleteInboxTask(${task.id})" title="Delete">
+                                <i class="far fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            container.innerHTML = itemsHtml;
+            updateBulkActions();
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function formatDate(date) {
+            const now = new Date();
+            const diff = now - date;
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            
+            if (days === 0) return 'Today';
+            if (days === 1) return 'Yesterday';
+            if (days < 7) return `${days} days ago`;
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+
+        function toggleTaskSelection(taskId, event) {
+            if (event.target.type === 'checkbox') {
+                if (event.target.checked) {
+                    appState.selectedTasks.add(taskId);
+                } else {
+                    appState.selectedTasks.delete(taskId);
+                }
+            } else {
+                if (appState.selectedTasks.has(taskId)) {
+                    appState.selectedTasks.delete(taskId);
+                } else {
+                    appState.selectedTasks.add(taskId);
+                }
+            }
+            
+            renderInboxItems();
+            updateSelectAllCheckbox();
+        }
+
+        function toggleSelectAll() {
+            const selectAll = document.getElementById('selectAllCheckbox');
+            
+            if (selectAll.checked) {
+                appState.inboxTasks.forEach(task => {
+                    appState.selectedTasks.add(task.id);
+                });
+            } else {
+                appState.selectedTasks.clear();
+            }
+            
+            renderInboxItems();
+        }
+
+        function updateSelectAllCheckbox() {
+            const selectAll = document.getElementById('selectAllCheckbox');
+            if (selectAll) {
+                selectAll.checked = appState.selectedTasks.size === appState.inboxTasks.length && appState.inboxTasks.length > 0;
+            }
+        }
+
+        function updateBulkActions() {
+            const bulkActions = document.getElementById('bulkActions');
+            const selectedCount = document.getElementById('selectedCount');
+            
+            if (appState.selectedTasks.size > 0) {
+                bulkActions.classList.add('active');
+                selectedCount.textContent = `${appState.selectedTasks.size} task${appState.selectedTasks.size !== 1 ? 's' : ''} selected`;
+            } else {
+                bulkActions.classList.remove('active');
+            }
+        }
+
+        function clearSelection() {
+            appState.selectedTasks.clear();
+            renderInboxItems();
+        }
+
+        function toggleComplete(taskId) {
+            const task = appState.inboxTasks.find(t => t.id === taskId);
+            if (task) {
+                task.completed = !task.completed;
+                
+                appState.activities.unshift({
+                    id: Date.now(),
+                    text: `You ${task.completed ? 'completed' : 'uncompleted'} "${task.title}"`,
+                    icon: task.completed ? 'check-circle' : 'circle',
+                    time: 'Just now'
+                });
+                
+                saveData();
+                renderInboxItems();
+                showNotification(task.completed ? 'Task completed' : 'Task marked incomplete');
+            }
+        }
+
+        function deleteInboxTask(taskId) {
+            const task = appState.inboxTasks.find(t => t.id === taskId);
+            if (confirm(`Delete "${task?.title}"?`)) {
+                appState.inboxTasks = appState.inboxTasks.filter(t => t.id !== taskId);
+                appState.selectedTasks.delete(taskId);
+                appState.tasks = appState.tasks.filter(t => t.id !== taskId);
+                
+                appState.activities.unshift({
+                    id: Date.now(),
+                    text: `You deleted "${task?.title}"`,
+                    icon: 'trash',
+                    time: 'Just now'
+                });
+                
+                saveData();
+                renderInboxItems();
+                updateInboxCount();
+                showNotification('Task deleted');
+            }
+        }
+
+        function bulkDelete() {
+            if (appState.selectedTasks.size === 0) return;
+            
+            if (confirm(`Delete ${appState.selectedTasks.size} task(s)?`)) {
+                appState.inboxTasks = appState.inboxTasks.filter(t => !appState.selectedTasks.has(t.id));
+                appState.tasks = appState.tasks.filter(t => !appState.selectedTasks.has(t.id));
+                
+                appState.activities.unshift({
+                    id: Date.now(),
+                    text: `You deleted ${appState.selectedTasks.size} task(s)`,
+                    icon: 'trash',
+                    time: 'Just now'
+                });
+                
+                appState.selectedTasks.clear();
+                saveData();
+                renderInboxItems();
+                updateInboxCount();
+                showNotification('Tasks deleted');
+            }
+        }
+
+        function moveToProject(taskId) {
+            const task = appState.inboxTasks.find(t => t.id === taskId);
+            if (!task) return;
+            
+            if (!appState.projects || appState.projects.length === 0) {
+                if (confirm('No projects exist. Create one?')) {
+                    openAddProjectModal();
+                }
+                return;
+            }
+            
+            const projectNames = appState.projects.map(p => p.name).join(', ');
+            const project = prompt(`Choose a project:\n${projectNames}`);
+            
+            if (project) {
+                const matchedProject = appState.projects.find(p => 
+                    p.name.toLowerCase() === project.toLowerCase()
+                );
+                
+                if (matchedProject) {
+                    task.project = matchedProject.name;
+                    
+                    appState.activities.unshift({
+                        id: Date.now(),
+                        text: `You moved "${task.title}" to ${matchedProject.name}`,
+                        icon: 'folder',
+                        time: 'Just now'
+                    });
+                    
+                    saveData();
+                    renderInboxItems();
+                    showNotification(`Task moved to ${matchedProject.name}`);
+                } else {
+                    alert('Project not found');
+                }
+            }
+        }
+
+        function bulkMoveToProject() {
+            if (!appState.projects || appState.projects.length === 0) {
+                if (confirm('No projects exist. Create one?')) {
+                    openAddProjectModal();
+                }
+                return;
+            }
+            
+            const projectNames = appState.projects.map(p => p.name).join(', ');
+            const project = prompt(`Choose a project for ${appState.selectedTasks.size} task(s):\n${projectNames}`);
+            
+            if (project) {
+                const matchedProject = appState.projects.find(p => 
+                    p.name.toLowerCase() === project.toLowerCase()
+                );
+                
+                if (matchedProject) {
+                    appState.selectedTasks.forEach(taskId => {
+                        const task = appState.inboxTasks.find(t => t.id === taskId);
+                        if (task) task.project = matchedProject.name;
+                    });
+                    
+                    appState.activities.unshift({
+                        id: Date.now(),
+                        text: `You moved ${appState.selectedTasks.size} task(s) to ${matchedProject.name}`,
+                        icon: 'folder',
+                        time: 'Just now'
+                    });
+                    
+                    saveData();
+                    clearSelection();
+                    renderInboxItems();
+                    showNotification(`Tasks moved to ${matchedProject.name}`);
+                } else {
+                    alert('Project not found');
+                }
+            }
+        }
+
+        function bulkAddTag() {
+            showNotification('Tag feature coming soon!');
+        }
+
+        function updateInboxCount() {
+            const count = appState.inboxTasks.filter(t => !t.completed).length;
+            const countElement = document.getElementById('inboxCount');
+            if (countElement) {
+                countElement.textContent = count;
+            }
+        }
+
+        function renderProjectsList() {
+            const projectsList = document.getElementById('projectsList');
+            if (!projectsList || !appState.projects) return;
+            
+            const projectItems = appState.projects.map(project => `
+                <li class="nav-item">
+                    <a href="#" class="nav-link" onclick="filterByProject('${project.name}')">
+                        <i class="fas fa-circle" style="color: ${getProjectColor(project.color)}; font-size: 12px;"></i>
+                        <span>${escapeHtml(project.name)}</span>
+                    </a>
+                </li>
+            `).join('');
+            
+            projectsList.innerHTML = `
+                <li class="nav-item">
+                    <a href="#" class="nav-link" onclick="openAddProjectModal()">
+                        <i class="fas fa-plus"></i>
+                        <span>Add Project</span>
+                    </a>
+                </li>
+                ${projectItems}
+            `;
+        }
+
+        function renderTagsList() {
+            const tagsList = document.getElementById('tagsList');
+            if (!tagsList || !appState.tags) return;
+            
+            const tagItems = appState.tags.map(tag => `
+                <li class="nav-item">
+                    <a href="#" class="nav-link" onclick="filterByTag('${tag.name}')">
+                        <i class="fas fa-tag"></i>
+                        <span>${escapeHtml(tag.name)}</span>
+                    </a>
+                </li>
+            `).join('');
+            
+            tagsList.innerHTML = `
+                <li class="nav-item">
+                    <a href="#" class="nav-link" onclick="openAddTagModal()">
+                        <i class="fas fa-plus"></i>
+                        <span>Add Tag</span>
+                    </a>
+                </li>
+                ${tagItems}
+            `;
+        }
+
+        function getProjectColor(color) {
+            const colors = {
+                blue: '#3b82f6',
+                green: '#10b981',
+                purple: '#8b5cf6',
+                orange: '#f59e0b'
+            };
+            return colors[color] || colors.blue;
+        }
+
+        function filterByProject(projectName) {
+            const filtered = appState.inboxTasks.filter(t => t.project === projectName);
+            displayFilteredTasks(filtered);
+            showNotification(`Showing tasks in ${projectName}`);
+        }
+
+        function filterByTag(tagName) {
+            showNotification('Tag filtering coming soon!');
+        }
+
+        function displayFilteredTasks(tasks) {
+            const container = document.getElementById('inboxItems');
+            
+            if (tasks.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-search"></i>
+                        <h3>No tasks found</h3>
+                        <p>Try a different filter</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            const itemsHtml = tasks.map(task => {
+                const addedDate = task.addedDate ? new Date(task.addedDate) : new Date();
+                const dateStr = formatDate(addedDate);
+                
+                return `
+                    <div class="inbox-item" onclick="toggleTaskSelection(${task.id}, event)">
+                        <div class="checkbox-col" onclick="event.stopPropagation()">
+                            <input type="checkbox" class="task-checkbox" onchange="toggleTaskSelection(${task.id}, event)">
+                        </div>
+                        <div class="task-title-col">
+                            <span class="task-priority-badge priority-${task.priority || 'medium'}"></span>
+                            <span class="task-title ${task.completed ? 'completed' : ''}">${escapeHtml(task.title)}</span>
+                        </div>
+                        <div class="project-col">
+                            ${task.project ? `
+                                <span class="project-dot" style="background: #3b82f6;"></span>
+                                <span class="project-name">${escapeHtml(task.project)}</span>
+                            ` : `
+                                <span class="project-name" style="color: var(--text-tertiary);">No project</span>
+                            `}
+                        </div>
+                        <div class="date-col">
+                            <i class="far fa-calendar-alt"></i>
+                            ${dateStr}
+                        </div>
+                        <div class="actions-col">
+                            <button class="action-btn" onclick="event.stopPropagation(); toggleComplete(${task.id})" title="Complete">
+                                <i class="far fa-check-circle"></i>
+                            </button>
+                            <button class="action-btn" onclick="event.stopPropagation(); moveToProject(${task.id})" title="Move to Project">
+                                <i class="far fa-folder"></i>
+                            </button>
+                            <button class="action-btn" onclick="event.stopPropagation(); deleteInboxTask(${task.id})" title="Delete">
+                                <i class="far fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            container.innerHTML = itemsHtml;
+        }
+
+        function focusQuickAdd() {
+            document.getElementById('quickInboxInput').focus();
+        }
+
+        function toggleFilter() {
+            const filter = prompt('Filter by:\n1. All\n2. Active\n3. Completed\n4. High Priority\n5. No Project');
+            
+            let filtered;
+            switch(filter) {
+                case '1':
+                    filtered = appState.inboxTasks;
+                    break;
+                case '2':
+                    filtered = appState.inboxTasks.filter(t => !t.completed);
+                    break;
+                case '3':
+                    filtered = appState.inboxTasks.filter(t => t.completed);
+                    break;
+                case '4':
+                    filtered = appState.inboxTasks.filter(t => t.priority === 'high');
+                    break;
+                case '5':
+                    filtered = appState.inboxTasks.filter(t => !t.project);
+                    break;
+                default:
+                    return;
+            }
+            
+            displayFilteredTasks(filtered);
+        }
+
+        function toggleSort() {
+            const options = ['Newest first', 'Oldest first', 'Alphabetical', 'By Priority'];
+            const choice = prompt(`Sort by:\n1. ${options[0]}\n2. ${options[1]}\n3. ${options[2]}\n4. ${options[3]}`);
+            
+            let sorted;
+            switch(choice) {
+                case '1':
+                    sorted = [...appState.inboxTasks].sort((a, b) => new Date(b.addedDate) - new Date(a.addedDate));
+                    break;
+                case '2':
+                    sorted = [...appState.inboxTasks].sort((a, b) => new Date(a.addedDate) - new Date(b.addedDate));
+                    break;
+                case '3':
+                    sorted = [...appState.inboxTasks].sort((a, b) => a.title.localeCompare(b.title));
+                    break;
+                case '4':
+                    const priorityOrder = { high: 1, medium: 2, low: 3 };
+                    sorted = [...appState.inboxTasks].sort((a, b) => 
+                        (priorityOrder[a.priority] || 2) - (priorityOrder[b.priority] || 2)
+                    );
+                    break;
+                default:
+                    return;
+            }
+            
+            appState.inboxTasks = sorted;
+            renderInboxItems();
+        }
+
+        function openAddProjectModal() {
+            const name = prompt('Enter project name:');
+            if (name && name.trim()) {
+                const newProject = {
+                    id: Date.now(),
+                    name: name.trim(),
+                    color: ['blue', 'green', 'purple', 'orange'][Math.floor(Math.random() * 4)]
+                };
+                appState.projects.push(newProject);
+                
+                appState.activities.unshift({
+                    id: Date.now(),
+                    text: `You created project "${name}"`,
+                    icon: 'folder',
+                    time: 'Just now'
+                });
+                
+                saveData();
+                renderProjectsList();
+                showNotification(`Project "${name}" created!`);
+            }
+        }
+
+        function openAddTagModal() {
+            const name = prompt('Enter tag name (e.g., @Work):');
+            if (name && name.trim()) {
+                const newTag = {
+                    id: Date.now(),
+                    name: name.trim().startsWith('@') ? name.trim() : '@' + name.trim()
+                };
+                appState.tags.push(newTag);
+                saveData();
+                renderTagsList();
+                showNotification(`Tag "${newTag.name}" created!`);
+            }
+        }
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            const themeToggle = document.getElementById('themeToggle');
+            const icon = themeToggle.querySelector('i');
+            
+            if (html.getAttribute('data-theme') === 'dark') {
+                html.removeAttribute('data-theme');
+                icon.className = 'fas fa-moon';
+                localStorage.setItem('theme', 'light');
+            } else {
+                html.setAttribute('data-theme', 'dark');
+                icon.className = 'fas fa-sun';
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+
+        function loadTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            const themeToggle = document.getElementById('themeToggle');
+            const icon = themeToggle.querySelector('i');
+            
+            if (savedTheme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                icon.className = 'fas fa-sun';
+            }
+        }
+
+        function toggleMobileMenu() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.add('active');
+            overlay.classList.add('active');
+        }
+
+        function closeMobileMenu() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.remove('active');
+            overlay.classList.remove('active');
+        }
+
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: var(--bg-secondary);
+                color: var(--text-primary);
+                padding: 16px 24px;
+                border-radius: 12px;
+                box-shadow: var(--shadow-lg);
+                border: 1px solid var(--border-color);
+                z-index: 1000;
+                animation: slideIn 0.3s ease;
+                font-weight: 500;
+            `;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOut {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+
+        window.addEventListener('resize', function() {
+            if (window.innerWidth > 768) {
+                closeMobileMenu();
+            }
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                clearSelection();
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadTheme();
+            initApp();
+        });
+    </script>
+</body>
+</html>
